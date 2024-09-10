@@ -1,0 +1,223 @@
+# MXM EDIT BEGIN - Introduce wandb logging, option to train with only DINO, and dimension reduction methods.
+log_type: "wandb" # can be "wandb" or "tensorboard"
+wandb_dotenv_path: "/dss/dssmcmlfs01/pr74ze/pr74ze-dss-0001/ru25jan4/gitroot/stegorep/stegorep/wand.env"
+log_model: True
+wandb_watch: False # Set to True for small runs 
+run_name: ${dataset_name}_custom_stego_dinov2
+only_dino: False
+val_batch_size: 8 # 16 doesn't fit on GPU since val images are larger than train images
+dimred_type: # can be any of ["PCA", "UMAP", "RP", "HNNE", null]
+train_metrics_log_interval: 100
+train_shuffle_key_buffer: 1000 # only used when fetching pre-computed features. We usually have way less than 1000 shards, since each shard has 500 samples. So here we randomly sample from all shards
+train_shuffle_item_buffer: 500
+log_train_metrics: False # whether mIoU etc are also logged for training set. This allowed us to analyze overfitting, but slows training down, so make it optional here.
+val_res: 336 # this was hardcoded in train_segmentation.py for STEGO
+root_feat_store: "/dss/dssmcmlfs01/pr74ze/pr74ze-dss-0001/ru25jan4/data/nns" # path where your precomputed DINO features are saved, subdirectories will be automatically added
+root_dimred_store: "/dss/dssmcmlfs01/pr74ze/pr74ze-dss-0001/ru25jan4/data/dimred" # path where your fitted dimension reduction is saved, subdirectories will be automatically added
+pca_conf:
+  n_components: ${dim}
+  num_images_limit: 5000 # 5k ViT-B images (~4Mio tokens) results in ~60GB RAM Usage.
+  mem_limit_percent:
+random_projection_conf:
+  n_components: ${dim}
+  num_images_limit: 5000
+  mem_limit_percent:
+hnne_conf:
+  n_components: ${dim}
+  num_images_limit: 5000
+  num_tokens_limit: 1000000 # 2M maxes out n1-standard-16 machine.
+  mem_limit_percent:
+umap_conf:
+  num_images_limit: 5000 # 4 mio tokens to draw from
+  num_tokens_limit: 10000
+  n_neighbors: 15 # 30 is suggested in UMAP's documentation for clustering https://umap-learn.readthedocs.io/en/latest/clustering.html
+  n_components: ${dim}
+  min_dist: 0.1 # 0 is suggested in UMAP's documentation for clustering https://umap-learn.readthedocs.io/en/latest/clustering.html
+  metric: "cosine"
+# MXM EDIT END
+
+output_root: "/dss/dssmcmlfs01/pr74ze/pr74ze-dss-0001/ru25jan4/checkpoints/STEGO_CUSTOM"
+pytorch_data_dir: "/dss/dssmcmlfs01/pr74ze/pr74ze-dss-0001/ru25jan4/data"
+experiment_name: "cityscapes_custom_stego"
+log_dir: ${dataset_name}
+azureml_logging: False
+submitting_to_aml: False
+
+# Loader params
+num_workers: 24
+max_steps: 5000
+batch_size: 32
+
+num_neighbors: 7
+dataset_name: "potsdam"
+
+# Used if dataset_name is "directory"
+dir_dataset_name: ~
+dir_dataset_n_classes: 5
+
+has_labels: False
+crop_type: "five" #  ~ default for potsdam
+crop_ratio: .5
+res: 224
+loader_crop_type: "center"
+
+# Model Params
+extra_clusters: 0
+use_true_labels: False
+use_recalibrator: False
+model_type: dinov2_vitb14_reg #"vit_base" #  "vit_small" vit small default for potsdam
+arch: "dinov2"
+use_fit_model: False
+dino_feat_type: "feat"
+projection_type: "nonlinear"
+#projection_type: linear
+dino_patch_size: 8
+granularity: 1
+continuous: True
+dim: 100
+dropout: True
+zero_clamp: True
+
+lr: 5e-4
+pretrained_weights: ~
+use_salience: False
+stabalize: False
+stop_at_zero: True
+
+# Feature Contrastive params
+pointwise: True # True # False for cityscapes else true
+feature_samples: 11
+neg_samples: 5
+aug_alignment_weight: 0.0
+
+correspondence_weight: 1.0
+
+
+# IAROA vit small 1/31/22
+# neg_inter_weight: 0.63
+# pos_inter_weight: 0.25
+# pos_intra_weight: 0.67
+# neg_inter_shift: 0.46
+# pos_inter_shift: 0.12
+# pos_intra_shift: 0.18
+
+#Potsdam vit small 1/31/22
+neg_inter_weight: 0.63
+pos_inter_weight: 0.25
+pos_intra_weight: 0.25
+neg_inter_shift: 0.46
+pos_inter_shift: 0.02
+pos_intra_shift: 0.08
+
+# Cocostuff27 vit small 1/31/22
+#neg_inter_weight: 0.63
+#pos_inter_weight: 0.25
+#pos_intra_weight: 0.67
+#neg_inter_shift: 0.66
+#pos_inter_shift: 0.02
+#pos_intra_shift: 0.08
+
+
+## Cocostuff27 10/3 vit_base
+
+#neg_inter_weight: 0.1538476246415498
+#pos_inter_weight: 1
+#pos_intra_weight: 0.1
+#
+#neg_inter_shift: 1
+#pos_inter_shift: 0.2
+#pos_intra_shift: 0.12
+
+
+## Cocostuff27 10/3 vit_small
+#neg_inter_weight: .63
+#pos_inter_weight: .25
+#pos_intra_weight: .67
+#
+#neg_inter_shift: .16
+#pos_inter_shift: .02
+#pos_intra_shift: .08
+
+
+
+## Cocostuff27 10/3 moco
+#neg_inter_weight: .63
+#pos_inter_weight: .25
+#pos_intra_weight: .67
+#
+#neg_inter_shift: .26
+#pos_inter_shift: .36
+#pos_intra_shift: .32
+
+#pos_inter_shift: .12
+#pos_intra_shift: .18
+
+## Cocostuff27
+#neg_inter_weight: .72
+#pos_inter_weight: .80
+#pos_intra_weight: .29
+#
+#neg_inter_shift: .86
+#pos_inter_shift: .04
+#pos_intra_shift: .34
+
+# Cityscapes 10/3
+# these work reasonably well
+# neg_inter_weight: 0.9058762625226623
+# pos_inter_weight: 0.577453483136995
+# pos_intra_weight: 1
+
+# neg_inter_shift: 0.31361241889448443
+# pos_inter_shift: 0.1754346515479633
+# pos_intra_shift: 0.45828472207
+
+# dinov2 potsdam
+# neg_inter_weight: 0.1
+# pos_inter_weight: 0.1
+# pos_intra_weight: 0.1
+
+# neg_inter_shift: 0.1
+# pos_inter_shift: 0.1
+# pos_intra_shift: 0.1
+
+
+# Cityscapes
+# neg_inter_weight: .72
+# pos_inter_weight: .18
+# pos_intra_weight: .46
+
+# neg_inter_shift: .25
+# pos_inter_shift: .20
+# pos_intra_shift: .25
+
+
+rec_weight: 0.0
+repulsion_weight: 0.0
+
+# CRF Params
+crf_weight: 0.0
+alpha: .5
+beta: .15
+gamma: .05
+w1: 10.0
+w2: 3.0
+shift: 0.00
+crf_samples: 1000
+color_space: "rgb"
+
+reset_probe_steps: ~
+
+# Logging params
+n_images: 5
+scalar_log_freq: 100
+checkpoint_freq: 200
+val_freq: 100
+hist_freq: 100
+
+
+hydra:
+  run:
+    dir: "."
+  output_subdir: ~
+  #job_logging: "disabled"
+  #hydra_logging: "disabled"
