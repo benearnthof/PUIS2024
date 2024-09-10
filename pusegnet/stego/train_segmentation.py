@@ -6,21 +6,23 @@ import pytorch_lightning as pl
 import seaborn as sns
 import torch.multiprocessing
 import torch.nn.functional as F
-from data import *
-from modules import *
+
+from pusegnet.stego.data import *
+from pusegnet.stego.modules import *
+
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 # from pytorch_lightning.utilities.seed import seed_everything
 from torch.utils.data import DataLoader
-from utils import *
+from pusegnet.stego.utils import *
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 
 # MXM EDIT BEGIN - Imports
 import wandb
-from mxm_utils import dimred_in_forward_pass, do_dimred, only_dino, setup_wandb
+from pusegnet.stego.mxm_utils import dimred_in_forward_pass, do_dimred, only_dino, setup_wandb
 from pytorch_lightning.loggers import WandbLogger
 
 # MXM EDIT END
